@@ -56,7 +56,7 @@
 
 """
 
-from flask import Flask, request
+from flask import Flask, request, redirect
 from ciscosparkapi import CiscoSparkAPI
 import os
 import sys
@@ -144,6 +144,48 @@ def message_email(email):
     # send_message_to_email(email, "Hello!")
     spark.messages.create(toPersonEmail=email, markdown="Hello!")
     return "Message sent to " + email
+
+@app.route("/web/contact", methods=["POST"])
+def web_contact_form():
+    """
+    Process a Web Contact Form Request
+    :return:
+    """
+
+    # Check if the Spark connection has been made
+    if spark is None:
+        sys.stderr.write("Bot not ready.  \n")
+        return "Spark Bot not ready.  "
+
+    sys.stderr.write("Incoming request from: %s \n" % (request.referrer))
+
+    # Get the Submitted infomation
+    try:
+        contact_email = request.form["contactEmail"]
+    except KeyError:
+        return "You must submit an email address"
+
+    try:
+        interests = request.form.getlist("interestType")
+    except KeyError:
+        # Default to "Questions" type
+        interests = ["questions"]
+
+    # Join the user to the rooms
+    for interest in interests:
+        try:
+            membership = spark.memberships.create(web_interest_rooms[interest], personEmail=contact_email)
+            sys.stderr.write("Added %s to the room for %s.\n" % (str(contact_email), str(interest)))
+        except:
+            sys.stderr.write("Error Adding %s to the room for %s.\n" % (str(contact_email), str(interest)))
+
+    redirect_url = request.referrer
+    if redirect_url is None: redirect_url = "http://imapex.io"
+
+
+    return redirect(redirect_url)
+
+
 
 
 # Health Check
@@ -275,9 +317,18 @@ if __name__ == '__main__':
     bot_url = os.getenv("SPARK_BOT_URL")
     bot_app_name = os.getenv("SPARK_BOT_APP_NAME")
 
+    web_interest_rooms = {
+        "join": os.getenv("SPARK_ROOM_ID_JOIN"),
+        "start": os.getenv("SPARK_ROOM_ID_START"),
+        "questions": os.getenv("SPARK_ROOM_ID_QUESTIONS")
+    }
+
     # bot_url and bot_app_name must come in from Environment Variables
     if bot_url is None or bot_app_name is None:
             sys.exit("Missing required argument.  Must set 'SPARK_BOT_URL' and 'SPARK_BOT_APP_NAME' in ENV.")
+
+    if None in web_interest_rooms.values():
+        sys.stderr.write("Room IDs for Web Interest Missing.\n")
 
     # Write the details out to the console
     sys.stderr.write("Spark Bot URL (for webhook): " + bot_url + "\n")
