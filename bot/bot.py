@@ -257,9 +257,14 @@ def spark_setup(email, token):
 
     # Setup the Spark Connection
     globals()["spark"] = CiscoSparkAPI(access_token=globals()["spark_token"])
+
+# Setup the Spark connection and WebHook
+def spark_webhook_setup():
+    # Setup the Spark Connection
     globals()["webhook"] = setup_webhook(globals()["bot_app_name"], globals()["bot_url"])
     sys.stderr.write("Configuring Webhook. \n")
     sys.stderr.write("Webhook ID: " + globals()["webhook"].id + "\n")
+
 
 
 if __name__ == '__main__':
@@ -288,5 +293,8 @@ if __name__ == '__main__':
     else:
         spark_setup(bot_email, spark_token)
         spark = CiscoSparkAPI(access_token=spark_token)
+
+        # For when actually want the bot to setup to reply
+        # spark_webhook_setup()
 
     app.run(debug=True, host='0.0.0.0', port=int("5000"))
