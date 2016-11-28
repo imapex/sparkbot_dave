@@ -15,7 +15,7 @@ publish:
 
   # This section will publish a docker image tagged "latest" if the branch is master
   docker:
-    repo: $$DOCKER_USERNAME/$$DOCKER_REPO
+    repo: $$DOCKER_ORG/$$DOCKER_REPO
     tag: "latest"
     username: $$DOCKER_USERNAME
     password: $$DOCKER_PASSWORD
